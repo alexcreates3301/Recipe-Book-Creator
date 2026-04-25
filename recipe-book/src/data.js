@@ -1,0 +1,27 @@
+export const sampleRecipe = {
+  id: 'sample-1',
+  name: 'Lemon Ricotta Pancakes',
+  description: 'Fluffy, cloud-like pancakes with bright lemon zest and creamy ricotta.',
+  category: 'Breakfast',
+  servings: 4,
+  prepTime: 10,
+  cookTime: 20,
+  ingredients: [
+    { id: 'i1', name: 'Ricotta cheese', amount: '1', unit: 'cup, whole milk' },
+    { id: 'i2', name: 'Eggs', amount: '3', unit: 'large, separated' },
+    { id: 'i3', name: 'All-purpose flour', amount: '¾', unit: 'cup' },
+    { id: 'i4', name: 'Lemon', amount: '1', unit: 'zest and juice' },
+    { id: 'i5', name: 'Granulated sugar', amount: '2', unit: 'tbsp' },
+    { id: 'i6', name: 'Baking powder', amount: '1', unit: 'tsp' },
+    { id: 'i7', name: 'Butter', amount: '1', unit: 'tbsp, for the pan' },
+  ],
+  steps: [
+    { id: 's1', text: 'In a large bowl, combine ricotta, egg yolks, lemon zest, lemon juice, and sugar. Stir until smooth.' },
+    { id: 's2', text: 'Sift in the flour and baking powder, then fold gently until just combined — a few lumps are fine.' },
+    { id: 's3', text: 'In a separate clean bowl, beat egg whites with a pinch of salt until stiff peaks form.' },
+    { id: 's4', text: 'Fold the egg whites into the ricotta batter in two additions, keeping as much air as possible.' },
+    { id: 's5', text: 'Heat a non-stick skillet or griddle over medium-low heat and melt a small knob of butter.' },
+    { id: 's6', text: 'Drop ¼ cup portions of batter onto the pan. Cook 3–4 minutes until bubbles appear on top, then flip and cook 2 minutes more. Serve immediately with maple syrup and fresh berries.' },
+  ],
+  notes: 'Let the batter rest for 5 minutes after folding in the egg whites — it helps the pancakes puff up higher. Do not overmix or press down on the pancakes while cooking.',
+};
