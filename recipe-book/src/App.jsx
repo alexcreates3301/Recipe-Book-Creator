@@ -47,7 +47,7 @@ function CategoryBadge({ category }) {
 
 // ── Sidebar ─────────────────────────────────────────────────────────────────
 
-function Sidebar({ recipes, activeId, onSelect, onNew }) {
+function Sidebar({ recipes, activeId, onSelect, onNew, onDelete }) {
   return (
     <aside className="sidebar">
       <div className="sidebar__header">
@@ -63,7 +63,20 @@ function Sidebar({ recipes, activeId, onSelect, onNew }) {
             className={`sidebar__item${r.id === activeId ? ' sidebar__item--active' : ''}`}
             onClick={() => onSelect(r.id)}
           >
-            <span className="sidebar__name">{r.name || <em>Untitled recipe</em>}</span>
+            <div className="sidebar__item-row">
+              <span className="sidebar__name">{r.name || <em>Untitled recipe</em>}</span>
+              <button
+                className="sidebar__delete"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(r.id);
+                }}
+                aria-label={`Delete ${r.name || 'untitled recipe'}`}
+                title="Delete recipe"
+              >
+                ×
+              </button>
+            </div>
             <CategoryBadge category={r.category} />
           </li>
         ))}
@@ -77,7 +90,7 @@ function Sidebar({ recipes, activeId, onSelect, onNew }) {
 
 // ── Edit tab ────────────────────────────────────────────────────────────────
 
-function EditTab({ recipe, onChange, onSave }) {
+function EditTab({ recipe, onChange, onSave, onDelete }) {
   function field(key) {
     return (val) => onChange({ ...recipe, [key]: val });
   }
@@ -272,6 +285,9 @@ function EditTab({ recipe, onChange, onSave }) {
         <button className="btn btn--save" onClick={onSave}>
           Save recipe
         </button>
+        <button className="btn btn--delete" onClick={onDelete}>
+          Delete recipe
+        </button>
       </div>
     </div>
   );
@@ -403,6 +419,7 @@ export default function App() {
 
   useEffect(() => {
     if (activeRecipe) setDraft({ ...activeRecipe });
+    else setDraft(null);
   }, [activeId]);
 
   useEffect(() => {
@@ -430,6 +447,23 @@ export default function App() {
     setTimeout(() => setSaved(false), 2000);
   }
 
+  function handleDelete(id) {
+    const target = recipes.find((r) => r.id === id);
+    if (!target) return;
+    const label = target.name?.trim() || 'this recipe';
+    if (!window.confirm(`Delete "${label}"? This cannot be undone.`)) return;
+
+    const idx = recipes.findIndex((r) => r.id === id);
+    const next = recipes.filter((r) => r.id !== id);
+    setRecipes(next);
+
+    if (id === activeId) {
+      const nextActive = next[idx] ?? next[idx - 1] ?? null;
+      setActiveId(nextActive?.id ?? null);
+    }
+    setSaved(false);
+  }
+
   function handleExport() {
     window.print();
   }
@@ -444,6 +478,7 @@ export default function App() {
           activeId={activeId}
           onSelect={handleSelect}
           onNew={handleNew}
+          onDelete={handleDelete}
         />
 
         <div className="main">
@@ -468,12 +503,20 @@ export default function App() {
           </div>
 
           <div className="content">
-            {tab === 'edit' ? (
+            {recipes.length === 0 ? (
+              <div className="empty-state">
+                <p className="empty-state__text">Your cookbook is empty.</p>
+                <button className="btn btn--new empty-state__btn" onClick={handleNew}>
+                  + Add your first recipe
+                </button>
+              </div>
+            ) : tab === 'edit' ? (
               <EditTab
                 key={activeId}
                 recipe={currentDraft}
                 onChange={setDraft}
                 onSave={handleSave}
+                onDelete={() => handleDelete(currentDraft.id)}
               />
             ) : (
               <PreviewTab recipe={activeRecipe ?? currentDraft} />
