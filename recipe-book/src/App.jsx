@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { sampleRecipe } from './data.js';
 import { scrapeRecipe } from './scraper.js';
+import { extractRecipeFromImage } from './imageImporter.js';
 import './App.css';
 
 const CATEGORIES = ['Breakfast', 'Lunch', 'Dinner', 'Dessert', 'Snack', 'Other'];
@@ -100,7 +101,131 @@ function ImportModal({ onImport, onClose }) {
   );
 }
 
-function Sidebar({ recipes, activeId, onSelect, onNew, onImportUrl }) {
+function ImageImportModal({ onImport, onClose }) {
+  const [apiKey, setApiKey] = useState(() => localStorage.getItem('anthropic_api_key') || '');
+  const [file, setFile] = useState(null);
+  const [preview, setPreview] = useState(null);
+  const [dragging, setDragging] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const fileInputRef = useRef(null);
+
+  function handleFile(f) {
+    if (!f || !f.type.startsWith('image/')) {
+      setError('Please select an image file (JPEG, PNG, WebP, or GIF).');
+      return;
+    }
+    setFile(f);
+    setError('');
+    const url = URL.createObjectURL(f);
+    setPreview(url);
+  }
+
+  function handleDrop(e) {
+    e.preventDefault();
+    setDragging(false);
+    handleFile(e.dataTransfer.files[0]);
+  }
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    if (!file || !apiKey.trim()) return;
+    localStorage.setItem('anthropic_api_key', apiKey.trim());
+    setLoading(true);
+    setError('');
+    try {
+      const recipe = await extractRecipeFromImage(file, apiKey.trim());
+      onImport(recipe);
+    } catch (err) {
+      setError(err.message);
+      setLoading(false);
+    }
+  }
+
+  const canSubmit = file && apiKey.trim() && !loading;
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal modal--image" onClick={(e) => e.stopPropagation()}>
+        <h2 className="modal__title">Import from image</h2>
+        <p className="modal__hint">
+          Upload a photo or screenshot of a recipe. Claude AI will read it and fill in all the fields.
+        </p>
+        <form onSubmit={handleSubmit}>
+          <div className="modal__field">
+            <label className="label">Anthropic API key</label>
+            <input
+              className="input"
+              type="password"
+              placeholder="sk-ant-..."
+              value={apiKey}
+              onChange={(e) => setApiKey(e.target.value)}
+              disabled={loading}
+            />
+            <span className="modal__field-hint">
+              Get a free key at{' '}
+              <a href="https://console.anthropic.com" target="_blank" rel="noreferrer">
+                console.anthropic.com
+              </a>
+              . Saved locally, never sent anywhere except Anthropic.
+            </span>
+          </div>
+
+          <div
+            className={`drop-zone${dragging ? ' drop-zone--active' : ''}${preview ? ' drop-zone--filled' : ''}`}
+            onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+            onDragEnter={(e) => { e.preventDefault(); setDragging(true); }}
+            onDragLeave={() => setDragging(false)}
+            onDrop={handleDrop}
+            onClick={() => !loading && fileInputRef.current?.click()}
+          >
+            {preview ? (
+              <img src={preview} className="drop-zone__preview" alt="Recipe preview" />
+            ) : (
+              <>
+                <div className="drop-zone__icon">&#128247;</div>
+                <p className="drop-zone__label">Drop image here or click to browse</p>
+                <p className="drop-zone__sub">JPEG, PNG, WebP, GIF</p>
+              </>
+            )}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              className="drop-zone__input"
+              onChange={(e) => handleFile(e.target.files[0])}
+              disabled={loading}
+            />
+          </div>
+
+          {file && !loading && (
+            <button
+              type="button"
+              className="btn btn--ghost modal__clear"
+              onClick={() => { setFile(null); setPreview(null); }}
+            >
+              Remove image
+            </button>
+          )}
+
+          {error && <p className="modal__error">{error}</p>}
+
+          <div className="modal__actions">
+            <button type="button" className="btn btn--ghost" onClick={onClose} disabled={loading}>
+              Cancel
+            </button>
+            <button type="submit" className="btn btn--save" disabled={!canSubmit}>
+              {loading ? <span className="spinner" /> : null}
+              {loading ? 'Reading recipe…' : 'Import recipe'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function Sidebar({ recipes, activeId, onSelect, onNew, onImportUrl, onImportImage }) {
   return (
     <aside className="sidebar">
       <div className="sidebar__header">
@@ -124,6 +249,7 @@ function Sidebar({ recipes, activeId, onSelect, onNew, onImportUrl }) {
       <div className="sidebar__footer">
         <button className="btn btn--new" onClick={onNew}>+ New recipe</button>
         <button className="btn btn--import" onClick={onImportUrl}>Import from URL</button>
+        <button className="btn btn--import" onClick={onImportImage}>Import from image</button>
       </div>
     </aside>
   );
@@ -453,6 +579,7 @@ export default function App() {
   const [draft, setDraft] = useState(null);
   const [saved, setSaved] = useState(false);
   const [showImport, setShowImport] = useState(false);
+  const [showImageImport, setShowImageImport] = useState(false);
 
   const activeRecipe = recipes.find((r) => r.id === activeId) ?? null;
 
@@ -493,6 +620,14 @@ export default function App() {
     setShowImport(false);
   }
 
+  function handleImportImage(recipe) {
+    setRecipes((prev) => [...prev, recipe]);
+    setActiveId(recipe.id);
+    setDraft(recipe);
+    setTab('preview');
+    setShowImageImport(false);
+  }
+
   function handleExport() {
     window.print();
   }
@@ -508,6 +643,7 @@ export default function App() {
           onSelect={handleSelect}
           onNew={handleNew}
           onImportUrl={() => setShowImport(true)}
+          onImportImage={() => setShowImageImport(true)}
         />
 
         <div className="main">
@@ -554,6 +690,12 @@ export default function App() {
         <ImportModal
           onImport={handleImportUrl}
           onClose={() => setShowImport(false)}
+        />
+      )}
+      {showImageImport && (
+        <ImageImportModal
+          onImport={handleImportImage}
+          onClose={() => setShowImageImport(false)}
         />
       )}
     </>
