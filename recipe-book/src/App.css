@@ -513,6 +513,92 @@ body {
   margin-top: 4px;
 }
 
+/* ── Image import modal extras ───────────────────────────────────────────── */
+
+.modal--image {
+  width: 520px;
+}
+
+.modal__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.modal__field-hint {
+  font-size: 11px;
+  color: var(--text-light);
+  line-height: 1.5;
+}
+
+.modal__field-hint a {
+  color: var(--text-muted);
+}
+
+.modal__clear {
+  font-size: 12px;
+  padding: 4px 10px;
+  margin-top: 6px;
+}
+
+/* ── Drop zone ───────────────────────────────────────────────────────────── */
+
+.drop-zone {
+  border: 2px dashed var(--border-strong);
+  border-radius: var(--radius);
+  padding: 28px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  min-height: 130px;
+  position: relative;
+}
+
+.drop-zone:hover,
+.drop-zone--active {
+  border-color: var(--text);
+  background: var(--bg);
+}
+
+.drop-zone--filled {
+  padding: 8px;
+  border-style: solid;
+  border-color: var(--border);
+}
+
+.drop-zone__icon {
+  font-size: 28px;
+  line-height: 1;
+}
+
+.drop-zone__label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.drop-zone__sub {
+  font-size: 11px;
+  color: var(--text-light);
+}
+
+.drop-zone__preview {
+  max-width: 100%;
+  max-height: 220px;
+  border-radius: 4px;
+  object-fit: contain;
+  display: block;
+}
+
+.drop-zone__input {
+  display: none;
+}
+
 /* ── Spinner ─────────────────────────────────────────────────────────────── */
 
 .spinner {
