@@ -257,7 +257,7 @@ function Sidebar({ recipes, activeId, onSelect, onNew, onImportUrl, onImportImag
 
 // ── Edit tab ────────────────────────────────────────────────────────────────
 
-function EditTab({ recipe, onChange, onSave }) {
+function EditTab({ recipe, onChange, onSave, onDelete }) {
   function field(key) {
     return (val) => onChange({ ...recipe, [key]: val });
   }
@@ -452,6 +452,9 @@ function EditTab({ recipe, onChange, onSave }) {
         <button className="btn btn--save" onClick={onSave}>
           Save recipe
         </button>
+        <button className="btn btn--delete" onClick={onDelete}>
+          Delete recipe
+        </button>
       </div>
     </div>
   );
@@ -628,6 +631,19 @@ export default function App() {
     setShowImageImport(false);
   }
 
+  function handleDelete() {
+    if (!activeId) return;
+    const name = activeRecipe?.name || 'this recipe';
+    if (!window.confirm(`Delete "${name}"? This cannot be undone.`)) return;
+    setRecipes((prev) => {
+      const next = prev.filter((r) => r.id !== activeId);
+      const fallback = next[0] ?? null;
+      setActiveId(fallback?.id ?? null);
+      setDraft(fallback ? { ...fallback } : null);
+      return next;
+    });
+  }
+
   function handleExport() {
     window.print();
   }
@@ -674,6 +690,7 @@ export default function App() {
                 recipe={currentDraft}
                 onChange={setDraft}
                 onSave={handleSave}
+                onDelete={handleDelete}
               />
             ) : (
               <PreviewTab recipe={activeRecipe ?? currentDraft} />

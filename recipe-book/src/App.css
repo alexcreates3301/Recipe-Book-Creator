@@ -458,6 +458,20 @@ body {
   color: var(--text);
 }
 
+.btn--delete {
+  background: transparent;
+  color: #c0392b;
+  border: 1px solid #e0b0ad;
+  padding: 10px 24px;
+  font-size: 14px;
+  margin-left: 8px;
+}
+
+.btn--delete:hover {
+  background: #fdf2f2;
+  border-color: #c0392b;
+}
+
 /* ── Import modal ────────────────────────────────────────────────────────── */
 
 .modal-overlay {
