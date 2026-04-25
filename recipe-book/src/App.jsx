@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { sampleRecipe } from './data.js';
+import { scrapeRecipe } from './scraper.js';
 import './App.css';
 
 const CATEGORIES = ['Breakfast', 'Lunch', 'Dinner', 'Dessert', 'Snack', 'Other'];
@@ -47,7 +48,59 @@ function CategoryBadge({ category }) {
 
 // ── Sidebar ─────────────────────────────────────────────────────────────────
 
-function Sidebar({ recipes, activeId, onSelect, onNew, onDelete }) {
+function ImportModal({ onImport, onClose }) {
+  const [url, setUrl] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    if (!url.trim()) return;
+    setLoading(true);
+    setError('');
+    try {
+      const recipe = await scrapeRecipe(url.trim());
+      onImport(recipe);
+    } catch (err) {
+      setError(err.message);
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal" onClick={(e) => e.stopPropagation()}>
+        <h2 className="modal__title">Import from URL</h2>
+        <p className="modal__hint">
+          Paste a link from AllRecipes, Serious Eats, BBC Good Food, Bon Appétit, and more.
+        </p>
+        <form onSubmit={handleSubmit}>
+          <input
+            className="input modal__input"
+            type="url"
+            placeholder="https://www.allrecipes.com/recipe/..."
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            autoFocus
+            disabled={loading}
+          />
+          {error && <p className="modal__error">{error}</p>}
+          <div className="modal__actions">
+            <button type="button" className="btn btn--ghost" onClick={onClose} disabled={loading}>
+              Cancel
+            </button>
+            <button type="submit" className="btn btn--save" disabled={loading || !url.trim()}>
+              {loading ? <span className="spinner" /> : null}
+              {loading ? 'Importing…' : 'Import recipe'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function Sidebar({ recipes, activeId, onSelect, onNew, onDelete, onImportUrl }) {
   return (
     <aside className="sidebar">
       <div className="sidebar__header">
@@ -83,6 +136,7 @@ function Sidebar({ recipes, activeId, onSelect, onNew, onDelete }) {
       </ul>
       <div className="sidebar__footer">
         <button className="btn btn--new" onClick={onNew}>+ New recipe</button>
+        <button className="btn btn--import" onClick={onImportUrl}>Import from URL</button>
       </div>
     </aside>
   );
@@ -414,6 +468,7 @@ export default function App() {
   const [tab, setTab] = useState('preview');
   const [draft, setDraft] = useState(null);
   const [saved, setSaved] = useState(false);
+  const [showImport, setShowImport] = useState(false);
 
   const activeRecipe = recipes.find((r) => r.id === activeId) ?? null;
 
@@ -464,6 +519,14 @@ export default function App() {
     setSaved(false);
   }
 
+  function handleImportUrl(recipe) {
+    setRecipes((prev) => [...prev, recipe]);
+    setActiveId(recipe.id);
+    setDraft(recipe);
+    setTab('preview');
+    setShowImport(false);
+  }
+
   function handleExport() {
     window.print();
   }
@@ -479,6 +542,7 @@ export default function App() {
           onSelect={handleSelect}
           onNew={handleNew}
           onDelete={handleDelete}
+          onImportUrl={() => setShowImport(true)}
         />
 
         <div className="main">
@@ -528,6 +592,13 @@ export default function App() {
       </div>
 
       <PrintView recipes={recipes} />
+
+      {showImport && (
+        <ImportModal
+          onImport={handleImportUrl}
+          onClose={() => setShowImport(false)}
+        />
+      )}
     </>
   );
 }
