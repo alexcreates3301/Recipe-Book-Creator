@@ -47,7 +47,7 @@ function CategoryBadge({ category }) {
 
 // ── Sidebar ─────────────────────────────────────────────────────────────────
 
-function Sidebar({ recipes, activeId, onSelect, onNew }) {
+function Sidebar({ recipes, activeId, onSelect, onNew, onDelete }) {
   return (
     <aside className="sidebar">
       <div className="sidebar__header">
@@ -63,10 +63,26 @@ function Sidebar({ recipes, activeId, onSelect, onNew }) {
             className={`sidebar__item${r.id === activeId ? ' sidebar__item--active' : ''}`}
             onClick={() => onSelect(r.id)}
           >
-            <span className="sidebar__name">{r.name || <em>Untitled recipe</em>}</span>
-            <CategoryBadge category={r.category} />
+            <div className="sidebar__item-main">
+              <span className="sidebar__name">{r.name || <em>Untitled recipe</em>}</span>
+              <CategoryBadge category={r.category} />
+            </div>
+            <button
+              className="sidebar__delete"
+              aria-label={`Delete ${r.name || 'recipe'}`}
+              title="Delete recipe"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(r.id);
+              }}
+            >
+              ×
+            </button>
           </li>
         ))}
+        {recipes.length === 0 && (
+          <li className="sidebar__empty">No recipes yet. Create one below.</li>
+        )}
       </ul>
       <div className="sidebar__footer">
         <button className="btn btn--new" onClick={onNew}>+ New recipe</button>
@@ -430,6 +446,23 @@ export default function App() {
     setTimeout(() => setSaved(false), 2000);
   }
 
+  function handleDelete(id) {
+    const target = recipes.find((r) => r.id === id);
+    const label = target?.name?.trim() ? `"${target.name}"` : 'this recipe';
+    if (!window.confirm(`Delete ${label}? This can't be undone.`)) return;
+
+    const remaining = recipes.filter((r) => r.id !== id);
+    setRecipes(remaining);
+
+    if (id === activeId) {
+      const next = remaining[0] ?? null;
+      setActiveId(next?.id ?? null);
+      setDraft(next ? { ...next } : null);
+      setTab('preview');
+    }
+    setSaved(false);
+  }
+
   function handleExport() {
     window.print();
   }
@@ -444,6 +477,7 @@ export default function App() {
           activeId={activeId}
           onSelect={handleSelect}
           onNew={handleNew}
+          onDelete={handleDelete}
         />
 
         <div className="main">
